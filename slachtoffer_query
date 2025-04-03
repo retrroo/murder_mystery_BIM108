@@ -1,0 +1,24 @@
+SELECT k.klant_id, k.voornaam, k.achternaam, k.geboortedatum
+FROM klant k
+JOIN activiteit_detectie ad ON ad.klant_id = k.klant_id
+WHERE ad.tijd BETWEEN '2024-04-24 21:00:00' AND '2024-04-24 23:59:59'
+  AND ad.activiteit_id = 3  -- Vermomming
+  AND ad.station_id IN (230, 29, 427, 274, 28, 26, 246, 113, 529, 50, 43, 40, 467, 122, 285, 162, 6, 184) -- Stations van trein 3091
+  AND YEAR(k.geboortedatum) BETWEEN 1993 AND 1995  -- Rond de 30 jaar
+  AND k.klant_id NOT IN (
+      SELECT klant_id
+      FROM activiteit_detectie
+      WHERE DATE(tijd) = '2024-04-24' AND activiteit_id != 3
+  ) -- Alleen vermomd op moorddag, geen andere activiteit
+  AND k.klant_id IN (
+      SELECT klant_id
+      FROM ov_info
+      WHERE datum < '2024-04-24'
+      GROUP BY klant_id
+      HAVING COUNT(*) >= 12
+  ) -- Bekende reiziger: 12+ reizen vóór 24 april
+  AND k.klant_id NOT IN (
+      SELECT klant_id
+      FROM ov_info
+      WHERE datum = '2024-04-24' AND status = 'uitchecken'
+  ); -- Geen uitcheck	

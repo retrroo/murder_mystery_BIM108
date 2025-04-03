@@ -1,0 +1,28 @@
+USE murder_mystery;
+SELECT k.klant_id, k.voornaam, k.achternaam
+FROM klant k
+WHERE k.klant_id IN (
+    -- 1 verdachte activiteit op 24 april laat op de avond
+    SELECT klant_id
+    FROM activiteit_detectie
+    WHERE activiteit_id = 3
+      AND tijd BETWEEN '2024-04-24 22:00:00' AND '2024-04-24 23:59:59'
+    GROUP BY klant_id
+    HAVING COUNT(*) = 1
+)
+AND k.klant_id NOT IN (
+    -- Geen enkele andere activiteit op 24 april buiten dat ene verdachte moment
+    SELECT klant_id
+    FROM activiteit_detectie
+    WHERE tijd BETWEEN '2024-04-24 00:00:00' AND '2024-04-24 21:59:59'
+       OR tijd > '2024-04-24 23:59:59'
+       OR tijd < '2024-04-24 00:00:00'
+)
+AND k.klant_id NOT IN (
+    -- Geen incheck of uitcheck op 24 april
+    SELECT klant_id
+    FROM activiteit_detectie
+    WHERE activiteit_id IN (6, 7)
+      AND tijd BETWEEN '2024-04-24 00:00:00' AND '2024-04-24 23:59:59'
+);
+
